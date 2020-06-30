@@ -4,7 +4,7 @@
 from pathlib import Path
 from zipline.data.bundles import register
 
-from zipline.data.bundles.ingester import csv_ingester # csv_ingester.py need to be placed in zipline.data.bundles
+from zipline.data.bundles.ingester import csv_ingester # ingester.py need to be placed in zipline.data.bundles
 
 _DEFAULT_PATH = str(Path.home() / '.zipline/csv/yahoo')
 
