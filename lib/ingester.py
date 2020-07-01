@@ -14,17 +14,22 @@ class ingester_base:
     """
     data bundle reader base
     """
-    def __init__(self, exchange):
+    def __init__(self, exchange, every_min_bar):
         """initializes an ingester instance
 
         :param exchange: the name of the exchange providing price data
-        :param start: the starting date of the data range
-        :param end: the end date of the data range
+
+        :param every_min_bar: The price time series given to an
+        ingester may have 1-day or 1-minute frequency. This variable
+        being `True` means the frequency is 1-minute, otherwise the
+        price is provided daily.
+
         :type exchange: str
-        :type start: str with format 'YYYY-MM-DD'
-        :type end: str with format 'YYYY-MM-DD'
+        :type every_min_bar: bool
+
         """
         self._exchange=exchange
+        self._every_min_bar=every_min_bar
 
     def __call__(self,
                  environ,
@@ -49,11 +54,30 @@ class ingester_base:
         """
         raise NotImplementedError
 
+    def _filter(self, df):
+        """applies filter on price data read by ingestor
+
+        This method is called within `self._read_and_convert`. All the
+        operations must be done on `df` inplace.
+
+        :param df: the price dataframe to be filtered
+        :type df: pandas.DataFrame
+        """
+        raise NotImplementedError
+
 class csv_ingester(ingester_base):
     """inegester from csv files
     """
-    def __init__(self, exchange, csvdir, csvdir_env, index_column='date', column_mapper=None):
+    def __init__(self, exchange, every_min_bar, csvdir, csvdir_env, index_column='date', column_mapper=None):
         """creates an instance of csv ingester
+
+        :param exchange: an arbitrary name for the exchange providing
+        price data
+
+        :param every_min_bar: The price time series given to an
+        ingester may have 1-day or 1-minute frequency. This variable
+        being `True` means the frequency is 1-minute, otherwise the
+        price is provided daily.
 
         :param csvdir: The path to the directory containing csv
         files. For each symbol there must be a single file of name
@@ -79,13 +103,15 @@ class csv_ingester(ingester_base):
         'date' in all symbol dataframes read by the ingester. The
         default value is `None`, which means no renaming will happen.
 
+        :type exchange: str
+        :type every_min_bar: bool
         :type csvdir: str
         :type csvdir_env: str
         :type index_column: str
         :type column_mapper: dict mapping str to str
 
         """
-        super().__init__(exchange)
+        super().__init__(exchange, every_min_bar)
         self._csvdir = csvdir
         self._csvdir_env = csvdir_env
         self._index_column=index_column
@@ -97,14 +123,13 @@ class csv_ingester(ingester_base):
         It tries first to set the csv directory from environment
         variable. If no environment variable is given, or it is not
         set by the user, it will check self._csvdir for a valid
-        directory. If that fails then it will raise ValueError.
+        directory. If that fails then `sys.exit()` will be called.
 
         :param show_progress: if `True`, it will be verbose
         :type show_progress: bool
 
         :return: the path to csv directory
         :rtype: str
-        :raise: ValueError
         """
         if self._csvdir_env:
             path = os.environ.get(self._csvdir_env)
@@ -118,11 +143,15 @@ class csv_ingester(ingester_base):
             if show_progress:
                 log.info('csv directory is set to \'{}\''.format(self._csvdir))
             return self._csvdir
-        log.error("csv directory is not valid.")
+        error_msg="csv directory is not valid"
         if self._csvdir_env:
-            log.info("it can be set via environment variable '{}'".format(self._csvdir_env))
-        log.info("it can be set inside '.zipline/extension.py' where the bundle is registered by setting argument 'csvdir'")
-        raise ValueError("csv directory is not valid")
+            error_msg="{}. It can be set via environment variable '{}'".format(error_msg, self._csvdir_env)
+        if error_msg[-1] == "'":
+            error_msg="{}. It can also be set inside '.zipline/extension.py' where the bundle is registered by setting argument 'csvdir'".format(error_msg)
+        else:
+            error_msg="{}. It can be set inside '.zipline/extension.py' where the bundle is registered by setting argument 'csvdir'".format(error_msg)
+        log.error("{}.".format(error_msg))
+        sys.exit(1)
 
     def _extract_symbols(self):
         """returns the list of (symbol, csv_file_path) pair from the csv directory path
@@ -187,8 +216,26 @@ class csv_ingester(ingester_base):
                     # rename columns if necessary
                     if self._column_mapper:
                         df_data.rename(columns=self._column_mapper, inplace=True)
+                    self._filter(df_data)
                     self._update_symbol_metadata(symbol_index, symbol, df_data)
                     yield symbol_index, df_data
+
+    def _filter(self, df):
+        """applies filter on price dataframe read by ingestor
+
+        This method is called within `self._read_and_convert`, after
+        the column mapping is done. It checks if the dataframe has
+        `split` and `dividend` column, if not it creates them and
+        assigns their default value.
+
+        :param df: the price dataframe to be filtered
+        :type df: pandas.DataFrame
+
+        """
+        if 'dividend' not in df.columns():
+            df['dividend'] = 0;
+        if 'split' not in df.columns():
+            df['split'] = 1
 
     def __call__(self,
                  environ,
@@ -215,7 +262,10 @@ class csv_ingester(ingester_base):
         self._create_metadata(len(symbols))
         if show_progress:
             log.info('writing data...')
-        daily_bar_writer.write(self._read_and_convert(symbols, show_progress), show_progress=show_progress)
+        if self._every_min_bar:
+            minute_bar_write.write(self._read_and_convert(symbols, show_progress), show_progress=show_progress)
+        else:
+            daily_bar_writer.write(self._read_and_convert(symbols, show_progress), show_progress=show_progress)
         if show_progress:
             log.info('meta data:\n{0}'.format(self._df_metadata))
         asset_db_writer.write(equities=self._df_metadata)

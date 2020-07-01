@@ -74,6 +74,7 @@ registered in [extension.py](lib/extension.py):
 register(
     'yahoo_csv',
     csv_ingester('YAHOO',
+                 every_min_bar=False, # the price is daily
                  csvdir_env='YAHOO_CSVDIR',
                  csvdir=_DEFAULT_PATH,
                  index_column='Date',
@@ -94,6 +95,10 @@ finance](https://finance.yahoo.com/). Let's have a closer look into
 its registration.
 
 * `'yahoo_csv'` is the name of the bundle,
+
+* `every_min_bar` indicates the frequency of price data. When `True`,
+  price data are reported every minute. Otherwise they are reported
+  daily,
 
 * `csv_ingester` is the ingester class name,
 

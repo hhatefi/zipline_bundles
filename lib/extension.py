@@ -11,6 +11,7 @@ _DEFAULT_PATH = str(Path.home() / '.zipline/csv/yahoo')
 register(
     'yahoo_csv',
     csv_ingester('YAHOO',
+                 every_min_bar=False, # the price is daily
                  csvdir_env='YAHOO_CSVDIR',
                  csvdir=_DEFAULT_PATH,
                  index_column='Date',
