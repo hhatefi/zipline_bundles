@@ -212,7 +212,7 @@ class csv_ingester(ingester_base):
                 file_path = '{0}/{1}.csv'.format(path, symbol)
                 if os.path.exists(file_path):
                     # read data from csv file and set the index
-                    df_data = pd.read_csv(file_path, index_col=self._index_column, parse_dates=True).sort_index()
+                    df_data = pd.read_csv(file_path, index_col=self._index_column, parse_dates=True, dtype={"Volumn": np.uint64}).sort_index()
                     # rename columns if necessary
                     if self._column_mapper:
                         df_data.rename(columns=self._column_mapper, inplace=True)
@@ -232,9 +232,9 @@ class csv_ingester(ingester_base):
         :type df: pandas.DataFrame
 
         """
-        if 'dividend' not in df.columns():
+        if 'dividend' not in df.columns:
             df['dividend'] = 0;
-        if 'split' not in df.columns():
+        if 'split' not in df.columns:
             df['split'] = 1
 
     def __call__(self,

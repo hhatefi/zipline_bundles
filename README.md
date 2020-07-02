@@ -12,24 +12,68 @@ more.
 
 ## Quick start
 
-To add the bundles defined in this repository, the following steps should be taken:
+You have already cloned the repository and switched the working
+directory to the repository root. Then, in an environment where
+zipline is installed and working, adding all data bundles can be done
+by
 
-* copy [extension.py](lib/extension.py) into `~/.zipline/`, or if the
-  extension file already exists, append its content into
-  `~/.zipline/extension.py`
+```sh
+python install.py
+```
+That's it!
 
-* find where package `zipline.data.bundles` is located and add module
-  [ingester.py](lib/ingester.py) into it. Where the package is located
-  differs depending on the way zipline is installed. One way to detect
-  the location of this package in an environment with zipline
-  installed is to run the following code:
+You can check if the installation is complete by running:
+```sh
+zipline bundles
+```
+
+You should see new bundles are added to the list:
+
+```bash
+csvdir <no ingestions>
+quandl <no ingestions>
+quantopian-quandl <no ingestions>
+yahoo_csv <no ingestions>
+```
+
+Here `yahoo_csv` is a bundle defined by
+[extension.py](lib/extension.py) and is passed as the first argument
+to one of the `register` functions defined there.
+
+Then, ingest price data stored in [data](data) directory:
+
+```bash
+YAHOO_CSVDIR=./data/ zipline ingest -b yahoo_csv
+```
+
+You can afterwards test a simple strategy, like buy and hold, over the
+ingested data.
+
+```bash
+zipline run -f tests/buy_and_hold.py -b yahoo_csv --start 2019-07-02 --end 2020-07-02
+```
+
+The cumulative return of the strategy will be depicted in a plot after
+backtesting.
+
+### Manual installation
+[install.py](install.py) takes the following steps to add the bundles:
+
+* copy [extension.py](lib/extension.py) into `~/.zipline/`,
+
+* add module [ingester.py](lib/ingester.py) into package
+  `zipline.data.bundles`, i.e. copy the file into where the package is
+  located. Package location differs depending on the way zipline is
+  installed. One way to find out the location in an environment with
+  zipline installed is to run the following code:
+  
   ```bash
   python -c 'import zipline.data.bundles as bdl; print(bdl.__path__)'
   ```
 
 ## Data bundles 
 
-Zipline runs a trading stretegy by executing its buy and cell order
+Zipline runs a trading strategy by executing its buy and cell order
 over historical price data. Price data are provided by zipline data
 bundles. Data bundles can basically read price data from CSV files or
 directly download them from the firm website via a set of designated
@@ -90,7 +134,7 @@ register(
 )
 ```
 
-`csv_yahoo` can read csv files downloaded from [yahoo!
+`yahoo_csv` can read csv files downloaded from [yahoo!
 finance](https://finance.yahoo.com/). Let's have a closer look into
 its registration.
 
@@ -114,7 +158,7 @@ its registration.
   ```
 
 * `csvdir` is the path to the csv directory. The path set by
-   envirenment variable defined by `csvdir_env` takes precedence over
+   environment variable defined by `csvdir_env` takes precedence over
    this value,
 
 * `index_column` is the column label in the csv file to be considered
