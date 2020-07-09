@@ -248,7 +248,7 @@ class csv_ingester(ingester_base):
 
         The order of calls are as follows
         1. `self._extract_symbols()`
-        2. `ingester.create_metadata()`
+        2. `create_metadata()`
         3. `self._read_and_convert()`
         """
         symbols = self._extract_symbols()
@@ -399,12 +399,12 @@ class direct_ingester(ingester_base):
         """implements the actual ingest function
 
         The order of calls are as follows
-        1. `ingester.create_metadata()`
+        1. `create_metadata()`
         2. `self._read_and_convert()`
         """
         if show_progress:
             log.info('symbols are: {0}'.format(self._symbols))
-        self._df_metadata=ingester_base.create_metadata(len(symbols))
+        self._df_metadata=create_metadata(len(symbols))
         if show_progress:
             log.info('writing data...')
         if self._every_min_bar:
