@@ -312,7 +312,7 @@ class direct_ingester(ingester_base):
         :type symbol_list: an iterable container of str type
         """
         super().__init__(exchange, every_min_bar)
-        self._symbol_list = create_symbol_list(symbol_list_env, symbol_list)
+        self._symbols = direct_ingester.create_symbol_list(symbol_list_env, symbol_list)
         self._downloader = downloader
 
     @staticmethod
@@ -337,10 +337,11 @@ class direct_ingester(ingester_base):
 
         """
         symbols=set()
-        env_list = os.environ.get(symbol_list_env, '') # comma seperated
 
-        # add symbols from environment variable
-        symbols=symbols.union([sym for sym in env_list.split(',') if sym.strip()])
+        if symbol_list_env:
+            env_list = os.environ.get(symbol_list_env, '') # comma seperated
+            # add symbols from environment variable
+            symbols=symbols.union([sym for sym in env_list.split(',') if sym.strip()])
 
         # add symbols from |symbol_list|
         if symbol_list:
@@ -374,7 +375,7 @@ class direct_ingester(ingester_base):
         autoclose_date = end_date + pd.Timedelta(days=1)
         self._df_metadata.iloc[symbol_index] = start_date, end_date, autoclose_date, symbol, self._exchange
 
-    def _read_and_convert(self, symbols, start_session, end_session, show_progress):
+    def _read_and_convert(self, start_session, end_session, show_progress):
         """returns the generator of symbol index and the dataframe storing its price data
         """
         with maybe_show_progress(self._symbols, show_progress, label='Downloading from {}: '.format(self._exchange)) as it:
@@ -404,13 +405,13 @@ class direct_ingester(ingester_base):
         """
         if show_progress:
             log.info('symbols are: {0}'.format(self._symbols))
-        self._df_metadata=create_metadata(len(symbols))
+        self._df_metadata=create_metadata(len(self._symbols))
         if show_progress:
             log.info('writing data...')
         if self._every_min_bar:
-            minute_bar_write.write(self._read_and_convert(symbols, show_progress), show_progress=show_progress)
+            minute_bar_write.write(self._read_and_convert(start_session, end_session, show_progress), show_progress=show_progress)
         else:
-            daily_bar_writer.write(self._read_and_convert(symbols, show_progress), show_progress=show_progress)
+            daily_bar_writer.write(self._read_and_convert(start_session, end_session, show_progress), show_progress=show_progress)
         if show_progress:
             log.info('meta data:\n{0}'.format(self._df_metadata))
         asset_db_writer.write(equities=self._df_metadata)
