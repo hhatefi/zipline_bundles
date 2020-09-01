@@ -301,9 +301,7 @@ class direct_ingester(ingester_base):
         by this parameter and those given by the environment variable
 
         :param downloader: a callable that downloads price data. It takes the following arguments:
-           1. symbol: an string referring to the symbol name
-           2. start_session: the first day on which price data are downloaded. The type is pandas.Timestamp
-           3. end_session: the last day on which price data are downloaded. The type is pandas.Timestamp
+           - symbol: an string referring to the symbol name
 
         :type exchange: str
         :type every_min_bar: bool
@@ -375,13 +373,13 @@ class direct_ingester(ingester_base):
         autoclose_date = end_date + pd.Timedelta(days=1)
         self._df_metadata.iloc[symbol_index] = start_date, end_date, autoclose_date, symbol, self._exchange
 
-    def _read_and_convert(self, start_session, end_session, show_progress):
+    def _read_and_convert(self, calendar, show_progress):
         """returns the generator of symbol index and the dataframe storing its price data
         """
         with maybe_show_progress(self._symbols, show_progress, label='Downloading from {}: '.format(self._exchange)) as it:
             for symbol_index, symbol in enumerate(it):
                 # read data from csv file and set the index
-                df_data = self._downloader(symbol, start_session, end_session)
+                df_data = self._downloader(symbol)
                 self._update_symbol_metadata(symbol_index, symbol, df_data)
                 yield symbol_index, df_data
 
@@ -409,9 +407,9 @@ class direct_ingester(ingester_base):
         if show_progress:
             log.info('writing data...')
         if self._every_min_bar:
-            minute_bar_write.write(self._read_and_convert(start_session, end_session, show_progress), show_progress=show_progress)
+            minute_bar_write.write(self._read_and_convert(calendar, show_progress), show_progress=show_progress)
         else:
-            daily_bar_writer.write(self._read_and_convert(start_session, end_session, show_progress), show_progress=show_progress)
+            daily_bar_writer.write(self._read_and_convert(calendar, show_progress), show_progress=show_progress)
         if show_progress:
             log.info('meta data:\n{0}'.format(self._df_metadata))
         asset_db_writer.write(equities=self._df_metadata)

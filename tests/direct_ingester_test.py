@@ -4,6 +4,7 @@ import os
 import unittest
 import pandas as pd
 
+_g_start_date = pd.Timestamp('2020.01.01')
 
 df_A=pd.DataFrame({'open': range(10),
                    'high': range(10, 20),
@@ -11,11 +12,11 @@ df_A=pd.DataFrame({'open': range(10),
                    'close': range(30, 40),
                    'volume': range(40, 50),
                    'dividend': [0]*10,
-                   'split': [1]*10}, index= [pd.Timestamp('2020.01.01') + pd.Timedelta(days=i) for i in range(10)])
+                   'split': [1]*10}, index= [_g_start_date + pd.Timedelta(days=i) for i in range(10)])
 
 df_B=df_A + 5
 
-def downloader_test1(symbol, start_session, end_session):
+def downloader(symbol):
     df = None
     if symbol == 'A':
         df = df_A
@@ -56,7 +57,7 @@ class DirectIngesterTestCase(unittest.TestCase):
             def write(self,equities): # asset_db_writer
                 self.df_metadata = equities
 
-        ingester=ig.direct_ingester('EXX', False, None, downloader_test1, symbol_list = ('A', 'B'))
+        ingester=ig.direct_ingester('EXX', False, None, downloader, symbol_list = ('A', 'B'))
         self.assertEqual(len(ingester._symbols), 2)
 
         adjustment_writer=fake_adjustment_writer()
@@ -68,8 +69,8 @@ class DirectIngesterTestCase(unittest.TestCase):
                  daily_bar_writer=bar_writer,
                  adjustment_writer=adjustment_writer,
                  calendar=None,
-                 start_session=pd.Timestamp('2020.01.01'),
-                 end_session=pd.Timestamp('2020.01.01'),
+                 start_session=None,
+                 end_session=None,
                  cache=None,
                  show_progress=True,
                  output_dir=None)

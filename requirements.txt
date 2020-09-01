@@ -1,0 +1,3 @@
+yahoofinancials
+iexfinance
+
