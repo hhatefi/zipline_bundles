@@ -3,7 +3,7 @@ Zipline Bundles
 
 This repository contains some zipline data bundles, which are used to
 download and extract historical price data for backtesting in zipline
-platform. [Zipline](https://www.zipline.io/) is a backtesting
+platform. [zipline](https://www.zipline.io/) is a backtesting
 framework written in python, which can be used to test, analyze and
 visualize trading strategies. It currently powers
 [Quantopian](https://www.quantopian.com/), a free rich community
@@ -20,7 +20,16 @@ by
 ```sh
 python install.py
 ```
-That's it!
+
+Note that the installer complains if there already exist python
+modules with the same name. To force the installer to overwrite the
+existing modules, add `-f`. Apart from `zipline` itself and its
+dependencies, there are additional dependencies used by each
+bundle. To install them all run
+
+```sh
+pip install -r requirements.txt
+```
 
 You can check if the installation is complete by running:
 ```sh
@@ -31,23 +40,24 @@ You should see new bundles are added to the list:
 
 ```bash
 csvdir <no ingestions>
+iex <no ingestions>
 quandl <no ingestions>
 quantopian-quandl <no ingestions>
 yahoo_csv <no ingestions>
+yahoo_direct <no ingestions>
 ```
 
-Here `yahoo_csv` is a bundle defined by
-[extension.py](lib/extension.py) and is passed as the first argument
-to one of the `register` functions defined there.
-
-Then, ingest price data stored in [data](data) directory:
+To test the installation, a simple strategy backtest can be executed
+over price data read by one of the bundles. For this, `yahoo_csv`
+bundle is used, which reads data from a directory containing csv files
+that are downloaded from yahoo finance. First, ingest price data
+stored in [data](data) directory:
 
 ```bash
 YAHOO_CSVDIR=./data/ zipline ingest -b yahoo_csv
 ```
 
-You can afterwards test a simple strategy, like buy and hold, over the
-ingested data.
+Then backtest buy and hold strategy over the ingested data:
 
 ```bash
 zipline run -f tests/buy_and_hold.py -b yahoo_csv --start 2019-07-02 --end 2020-07-02
@@ -56,14 +66,71 @@ zipline run -f tests/buy_and_hold.py -b yahoo_csv --start 2019-07-02 --end 2020-
 The cumulative return of the strategy will be depicted in a plot after
 backtesting.
 
-### Manual installation
+## Bundles
+
+The following bundles are currently defined by the repository.
+
+| Bundle        | Data Source                                                    | Dependency | Module  |
+| :-----        | ----------                                                     | :----------| ------- |
+| `yahoo_csv`   | csv files downloaded from [yahoo finance](https://finance.yahoo.com) | none | none    |
+| `yahoo_direct`| [yahoo finance](https://finance.yahoo.com) | [`yahoofinancials`](https://pypi.org/project/yahoofinancials/) | [yahoo.py](lib/yahoo.py) |
+| `iex`       |  [IEX cloud](https://iexcloud.io) | [`iexfinance`](https://pypi.org/project/iexfinance/) | [iex.py](lib/iex.py) |
+
+`yahoo_csv` bundle takes data from CSV files downloaded from yahoo
+finance. Each file contains price data of a single asset and shall be
+named as `assert_name.csv`. The bundle reads all the csv files located
+in a directory given by environment variable `YAHOO_CSVDIR`:
+
+```bash
+YAHOO_CSVDIR=/path/to/csvdir zipline ingest -b yahoo_csv
+```
+
+`yahoo_direct` directly downloads price data from yahoo finance. The
+bundle extracts asset names from environment variable `YAHOO_SYM_LST`,
+which holds a comma separated list of asset names. For example:
+
+```bash
+YAHOO_SYM_LST=SPY,AAPL zipline ingest -b yahoo_direct
+```
+
+ingests price data of assets `SPY` and `AAPL`. The start and the end
+date of ingestion can be set into variables `start_date` and
+`end_date`, respectively. These variables are passed to function
+`get_downloader` where the bundle is registered in
+`$HOME/.zipline/extension.py`. Here is how the registration may look
+like:
+
+```python
+register('yahoo_direct', # bundle's name
+         direct_ingester('YAHOO',
+                         every_min_bar=False,
+                         symbol_list_env='YAHOO_SYM_LST', # the environment variable holding the comma separated list of assert names
+                         downloader=yahoo.get_downloader(start_date='2010-01-01',
+                                                         end_date='2020-01-01'
+                         ),
+         ),
+         calendar_name='NYSE',
+)
+```
+
+In addition to the start and the end date, the environment variable
+name holding price data can be set here.
+
+`iex` downloads price data from IEX cloud. Its usage is fairly similar
+to that of `yahoo_direct`. Fetching price data from IEX cloud however
+requires passing a valid API token, which is stored in environment
+variable `IEX_TOKEN`. Moreover, the environment variable storing asset
+names is called `IEX_SYM_LST`.
+
+## Manual installation
 [install.py](install.py) takes the following steps to add the bundles:
 
 * copy [extension.py](lib/extension.py) into `~/.zipline/`,
 
-* add module [ingester.py](lib/ingester.py) into package
-  `zipline.data.bundles`, i.e. copy the file into where the package is
-  located. Package location differs depending on the way zipline is
+* add [ingester.py](lib/ingester.py) as well as the proper module for
+  each bundle listed in above table into package
+  `zipline.data.bundles`, i.e. copy the modules into where the package
+  is located. Package location differs depending on the way zipline is
   installed. One way to find out the location in an environment with
   zipline installed is to run the following code:
   
@@ -71,100 +138,8 @@ backtesting.
   python -c 'import zipline.data.bundles as bdl; print(bdl.__path__)'
   ```
 
-## Data bundles 
-
-Zipline runs a trading strategy by executing its buy and cell order
-over historical price data. Price data are provided by zipline data
-bundles. Data bundles can basically read price data from CSV files or
-directly download them from the firm website via a set of designated
-API calls. In either cases, the price data are usually required to be
-preprocessed before feeding into the zipline price database. The
-reason is because zipline expect a certain format for price data. For
-instance, it requires price time series to comply with OHLCV format
-with certain column labels. Visit https://www.zipline.io/bundles.html
-for more details.
-
-## Writing a new data bundle
-
-In order to add a new data bundle, two steps need to be taken:
-
-1. writing an ingester module that gets price data from a source and
-converts it to the format required by zipline. The module is usually
-added in `zipline.data.bundles` package.
-
-2. registering the ingester module as a new data bundle.
-
-The latter is usually done in `.zipline/extension.py` file located in
-user's home directory. An example of such a registration is given by
-[extension.py](lib/extension.py). Our [extension.py](lib/extension.py)
-assumes that the ingester module is accessible from
-`zipline.data.bundles` package. It can of course be changed by users
-to their desired location. 
-
-### Adding a csv bundle 
-
-An ingester capable of reading csv files with different formats is
-defined by class `csv_ingester` inside module
-[ingester.py](lib/ingester.py). Price data are read from a directory
-containing csv files. For each symbol a csv file with name
-`<symbol-name>.csv` is expected. Price data are read from the files
-and converted to `pandas.DataFrame` objects with certain columns
-before feeding into zipline price database. `csv_ingester` can be
-configured according to the shape of the csv file it reads from. An
-example of this configuration can be seen where bundle `yahoo_csv` is
-registered in [extension.py](lib/extension.py):
-
-```python
-register(
-    'yahoo_csv',
-    csv_ingester('YAHOO',
-                 every_min_bar=False, # the price is daily
-                 csvdir_env='YAHOO_CSVDIR',
-                 csvdir=_DEFAULT_PATH,
-                 index_column='Date',
-                 column_mapper={'Open': 'open',
-                                'High': 'high',
-                                'Low': 'low',
-                                'Close': 'close',
-                                'Volume': 'volume',
-                                'Adj Close': 'price',
-                 },
-    ),
-    calendar_name='NYSE',
-)
-```
-
-`yahoo_csv` can read csv files downloaded from [yahoo!
-finance](https://finance.yahoo.com/). Let's have a closer look into
-its registration.
-
-* `'yahoo_csv'` is the name of the bundle,
-
-* `every_min_bar` indicates the frequency of price data. When `True`,
-  price data are reported every minute. Otherwise they are reported
-  daily,
-
-* `csv_ingester` is the ingester class name,
-
-* `'YAHOO'` is an arbitrary name for the exchange, from which the
-  price data are downloaded,
-
-* `csvdir_env` is the name of environment variable pointing to the
-  directory containing csv files. It gives the opportunity of passing
-  the csv directory at runtime via setting the environment
-  variable. For `yahoo_csv` bundle, e.g
-  ```python
-  YAHOO_CSVDIR=/path/to/csv/dir zipline ingest -b yahoo_csv
-  ```
-
-* `csvdir` is the path to the csv directory. The path set by
-   environment variable defined by `csvdir_env` takes precedence over
-   this value,
-
-* `index_column` is the column label in the csv file to be considered
-  as `pandas.DataFrame` index,
-
-* `column_mapper` is a dictionary mapping the column labels in the csv
-  file to the one in `pandas.DataFrame`,
-
-* `calendar_name` is the calendar used by the exchange.
+If only a subset of bundles is needed, one way is to keep their
+registration in [extension.py](lib/extension.py), their dependency in
+[requirements.txt](requirements.txt) and their related modules in
+variable `src_ing` inside [install.py](install.py). Then, use the
+installation script!
