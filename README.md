@@ -143,3 +143,10 @@ registration in [extension.py](lib/extension.py), their dependency in
 [requirements.txt](requirements.txt) and their related modules in
 variable `src_ing` inside [install.py](install.py). Then, use the
 installation script!
+
+## Adding new bundles
+
+It is possible to define new data bundles using the structures
+provided by this repository. The process is explained in [this
+post](https://hhatefi.github.io/posts/zipline_bundles/) in more
+detail.
