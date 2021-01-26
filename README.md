@@ -114,7 +114,11 @@ register('yahoo_direct', # bundle's name
 ```
 
 In addition to the start and the end date, the environment variable
-name holding price data can be set here.
+name holding price data can be set here. `direct_ingester` can
+additionally takes callable `filter_cb`. It takes as a parameter a
+data frame that is just retured from the downloader and returns a new
+data frame. It is useful when the downloaded price data needs
+additional prepossessing.
 
 `iex` downloads price data from IEX cloud. Its usage is fairly similar
 to that of `yahoo_direct`. Fetching price data from IEX cloud however
