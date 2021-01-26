@@ -278,7 +278,7 @@ class direct_ingester(ingester_base):
     to the format accepted by zipline.
 
     """
-    def __init__(self, exchange, every_min_bar, symbol_list_env, downloader, symbol_list = None):
+    def __init__(self, exchange, every_min_bar, symbol_list_env, downloader, symbol_list=None, filter_cb=None):
         """creates an instance of csv ingester
 
         :param exchange: an arbitrary name for the exchange providing
@@ -303,15 +303,22 @@ class direct_ingester(ingester_base):
         :param downloader: a callable that downloads price data. It takes the following arguments:
            - symbol: an string referring to the symbol name
 
+        :param filter_cb: The callback that is called after the
+        downloader is invoked. It takes a data frame and returns the
+        filtered dataframe
+
         :type exchange: str
         :type every_min_bar: bool
         :type symbol_list_env: str
         :type downloader: a callable that downloads price data
         :type symbol_list: an iterable container of str type
+        :type filter_cb: a callable that takes a data frame and return a data frame
+
         """
         super().__init__(exchange, every_min_bar)
         self._symbols = direct_ingester.create_symbol_list(symbol_list_env, symbol_list)
         self._downloader = downloader
+        self._filter=filter_cb
 
     @staticmethod
     def create_symbol_list(symbol_list_env, symbol_list, show_progress=False):
@@ -352,7 +359,6 @@ class direct_ingester(ingester_base):
                 log.info("price data of symbols {} to be ".format(symbols))
         return tuple(symbols)
 
-
     def _update_symbol_metadata(self, symbol_index, symbol, df):
         """update metadata for the given symbol
 
@@ -380,6 +386,9 @@ class direct_ingester(ingester_base):
             for symbol_index, symbol in enumerate(it):
                 # read data from csv file and set the index
                 df_data = self._downloader(symbol)
+                # apply filter when it is provided
+                if self._filter is not None:
+                    df_data = self._filter(df_data)
                 self._update_symbol_metadata(symbol_index, symbol, df_data)
                 yield symbol_index, df_data
 
