@@ -40,6 +40,9 @@ register('yahoo_direct', # bundle's name
 )
 
 from zipline.data.bundles import iex
+import trading_calendars as tc
+
+cal=tc.get_calendar('NYSE')
 register('iex', # bundle's name
          direct_ingester('IEX Cloud',
                          every_min_bar=False,
@@ -47,6 +50,7 @@ register('iex', # bundle's name
                          downloader=iex.get_downloader(start_date='2020-01-01',
                                                        end_date='2020-01-05'
                          ),
+                         filter_cb=lambda df: df[[cal.is_session(dt) for dt in df.index]]
          ),
          calendar_name='NYSE',
 )
