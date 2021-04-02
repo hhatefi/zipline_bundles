@@ -23,7 +23,7 @@ input_args=parser.parse_args()
 ### source files and directory
 src_dir=os.path.join(os.getcwd(), 'lib')
 src_ext=['extension.py']
-src_ing=['ingester.py', 'iex.py', 'yahoo.py']
+src_ing=['ingester.py', 'iex.py', 'yahoo.py', 'binance.py']
 
 ### destination directories
 dst_ext=os.path.join(os.path.expanduser('~'), '.zipline')

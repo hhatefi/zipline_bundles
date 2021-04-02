@@ -54,3 +54,29 @@ register('iex', # bundle's name
          ),
          calendar_name='NYSE',
 )
+
+from zipline.data.bundles import binance
+
+register('binance_daily', # bundle's name
+         direct_ingester('Binance Exchange',
+                         every_min_bar=False,
+                         symbol_list_env='BINANCE_SYM_LST', # the environemnt variable holding the comma separated list of assert names
+                         downloader=binance.get_downloader(start_date='2020-01-01',
+                                                           end_date='2020-01-05',
+                                                           every_min_bar=False # True for minute price, False for dailyprice
+                         ),
+         ),
+         calendar_name='24/7',
+)
+
+register('binance_min', # bundle's name
+         direct_ingester('Binance Exchange',
+                         every_min_bar=True,
+                         symbol_list_env='BINANCE_SYM_LST', # the environemnt variable holding the comma separated list of assert names
+                         downloader=binance.get_downloader(start_date='2020-01-01',
+                                                           end_date='2020-01-05',
+                                                           every_min_bar=True # True for minute price, False for dailyprice
+                         ),
+         ),
+         calendar_name='24/7',
+)

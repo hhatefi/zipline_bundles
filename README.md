@@ -75,7 +75,10 @@ The following bundles are currently defined by the repository.
 | `yahoo_csv`   | csv files downloaded from [yahoo finance](https://finance.yahoo.com) | none | none    |
 | `yahoo_direct`| [yahoo finance](https://finance.yahoo.com) | [`yahoofinancials`](https://pypi.org/project/yahoofinancials/) | [yahoo.py](lib/yahoo.py) |
 | `iex`       |  [IEX cloud](https://iexcloud.io) | [`iexfinance`](https://pypi.org/project/iexfinance/) | [iex.py](lib/iex.py) |
+| `binance_daily` | daily price from [binance exchange](https://www.binance.com) | [`python-binance`](https://python-binance.readthedocs.io) | [binance.py](lib/binance.py) |
+| `binance_min` | per minute price from [binance exchange](https://www.binance.com) | [`python-binance`](https://python-binance.readthedocs.io) | [binance.py](lib/binance.py) |
 
+### `yahoo_csv`
 `yahoo_csv` bundle takes data from CSV files downloaded from yahoo
 finance. Each file contains price data of a single asset and shall be
 named as `assert_name.csv`. The bundle reads all the csv files located
@@ -84,7 +87,7 @@ in a directory given by environment variable `YAHOO_CSVDIR`:
 ```bash
 YAHOO_CSVDIR=/path/to/csvdir zipline ingest -b yahoo_csv
 ```
-
+### `yahoo_csv`
 `yahoo_direct` directly downloads price data from yahoo finance. The
 bundle extracts asset names from environment variable `YAHOO_SYM_LST`,
 which holds a comma separated list of asset names. For example:
@@ -120,11 +123,25 @@ data frame that is just retured from the downloader and returns a new
 data frame. It is useful when the downloaded price data needs
 additional prepossessing.
 
+### `iex`
 `iex` downloads price data from IEX cloud. Its usage is fairly similar
 to that of `yahoo_direct`. Fetching price data from IEX cloud however
 requires passing a valid API token, which is stored in environment
 variable `IEX_TOKEN`. Moreover, the environment variable storing asset
 names is called `IEX_SYM_LST`.
+
+### `binance_daily` and `binance_min`
+
+Both collect data from binance cryptocurrency exchange. The list of
+symbols are taken from environment variable
+`BINANCE_SYM_LST`. Moreover, the API key and the secret key are
+supposed to set in environment variables `BINANCE_API_KEY` and
+`BINANCE_SECRET_KEY`. For example, the following command ingests the
+daily price of bitcoin and ethereum in USD.
+
+```bash
+BINANCE_API_KEY=your_api_key BINANCE_SECRET_KEY=your_secret_key BINANCE_SYM_LST=BTCUSDT,ETHUSDT zipline ingest -b binance_daily
+```
 
 ## Manual installation
 [install.py](install.py) takes the following steps to add the bundles:

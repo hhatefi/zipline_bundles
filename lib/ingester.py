@@ -258,7 +258,7 @@ class csv_ingester(ingester_base):
         if show_progress:
             log.info('writing data...')
         if self._every_min_bar:
-            minute_bar_write.write(self._read_and_convert(symbols, show_progress), show_progress=show_progress)
+            minute_bar_writer.write(self._read_and_convert(symbols, show_progress), show_progress=show_progress)
         else:
             daily_bar_writer.write(self._read_and_convert(symbols, show_progress), show_progress=show_progress)
         if show_progress:
@@ -416,7 +416,7 @@ class direct_ingester(ingester_base):
         if show_progress:
             log.info('writing data...')
         if self._every_min_bar:
-            minute_bar_write.write(self._read_and_convert(calendar, show_progress), show_progress=show_progress)
+            minute_bar_writer.write(self._read_and_convert(calendar, show_progress), show_progress=show_progress)
         else:
             daily_bar_writer.write(self._read_and_convert(calendar, show_progress), show_progress=show_progress)
         if show_progress:
