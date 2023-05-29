@@ -6,7 +6,7 @@ import datetime as dt
 def get_downloader(start_date,
                end_date,
                granularity='daily',):
-    """returns a downloader closure for oanda
+    """returns a downloader closure for yahoo
     :param start_date: the first day on which dat are downloaded
     :param end_date: the last day on which data are downloaded
     :param granularity: the frequency of price data, 'D' for daily and 'M1' for 1-minute data
@@ -16,7 +16,7 @@ def get_downloader(start_date,
     """
 
     def downloader(symbol):
-        """downloads symbol price data using oanda REST API
+        """downloads symbol price data using yahoo REST API
         :param symbol: the symbol name
         :type symbol: str
         """
