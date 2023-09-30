@@ -25,7 +25,7 @@ def get_downloader(start_date,
         res = yf.get_historical_price_data(str(start_date), str(end_date), granularity)
 
         if not res or symbol not in res or 'prices' not in res[symbol]:
-            ValueError('Fetching price data for "{}" failed.'.format(symbol))
+            raise ValueError('Fetching price data for "{}" failed.'.format(symbol))
 
         prices=res[symbol]['prices']
         df = pd.DataFrame({'open': [p['open'] for p in prices],
