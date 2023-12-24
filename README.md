@@ -3,12 +3,14 @@ Zipline Bundles
 
 This repository contains some zipline data bundles, which are used to
 download and extract historical price data for backtesting in zipline
-platform. [zipline](https://www.zipline.io/) is a backtesting
-framework written in python, which can be used to test, analyze and
-visualize trading strategies. It currently powers
-[Quantopian](https://www.quantopian.com/), a free rich community
-centered hosted platform for trading strategy development and many
-more.
+platform. Zipline is a backtesting framework written in python, which
+can be used to test, analyze and visualize trading strategies. Zipline
+was developed and maintained by Quantopian until 2020. Since
+[Quantopian's
+shutdown](https://www.bizjournals.com/boston/news/2020/11/10/quantopian-shuts-down-cofounders-head-elsewhere.html),
+this repository is developed and tested with
+[zipline_reloaded](https://github.com/stefan-jansen/zipline-reloaded),
+one of zipline's actively developed fork.
 
 ## Quick start
 
