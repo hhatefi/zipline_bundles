@@ -297,8 +297,9 @@ class direct_ingester(ingester_base):
         `SYMBOL_LIST=SPY,AAPL zipline ingest -b <bundle_name>`.
 
         :param symbol_list: an iterable providing the list of
-        symbols. The final list of symbol is the unio of symbols given
-        by this parameter and those given by the environment variable
+        symbols. The final list of symbol is the union of symbols
+        given by this parameter and those given by the environment
+        variable
 
         :param downloader: a callable that downloads price data. It takes the following arguments:
            - symbol: an string referring to the symbol name
@@ -382,7 +383,18 @@ class direct_ingester(ingester_base):
     def _read_and_convert(self, calendar, show_progress):
         """returns the generator of symbol index and the dataframe storing its price data
         """
-        with maybe_show_progress(self._symbols, show_progress, label='Downloading from {}: '.format(self._exchange)) as it:
+        assert self._symbols, (
+            f"Symbol list for bundle {self._exchange} is empty. Consider "
+            "setting the proper environment variable, or passing a symobol "
+            "list at bundle registration time."
+        )
+        with maybe_show_progress(
+                self._symbols,
+                show_progress,
+                label=f"Downloading from {self._exchange}: ",
+                length=len(self._symbols),
+                item_show_func=lambda s: s,
+        ) as it:
             for symbol_index, symbol in enumerate(it):
                 # read data from csv file and set the index
                 df_data = self._downloader(symbol)

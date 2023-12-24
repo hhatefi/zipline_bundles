@@ -40,9 +40,9 @@ register('yahoo_direct', # bundle's name
 )
 
 from zipline.data.bundles import iex
-import trading_calendars as tc
+import exchange_calendars as xcals
 
-cal=tc.get_calendar('NYSE')
+cal=xcals.get_calendar('NYSE')
 register('iex', # bundle's name
          direct_ingester('IEX Cloud',
                          every_min_bar=False,

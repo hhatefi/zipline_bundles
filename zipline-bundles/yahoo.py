@@ -1,6 +1,5 @@
 from yahoofinancials import YahooFinancials
 import pandas as pd
-import datetime as dt
 
 
 def get_downloader(start_date,
@@ -42,8 +41,6 @@ def get_downloader(start_date,
             df['split'] = [p['split'] for p in prices]
         else:
             df['split'] = 1
-
-        print(df.head(3))
 
         return df
 

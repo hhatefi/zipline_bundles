@@ -38,7 +38,7 @@ def main(force=True):
     dst_ext=os.path.join(os.path.expanduser('~'), '.zipline')
     # check the existence of zipline home
     if not os.path.isdir(dst_ext):
-        logging.error("zipline home ('{}') does not exist.")
+        logging.error(f"zipline home ('{dst_ext}') does not exist.")
         sys.exit(1)
 
     dst_ing=bld.__path__[0]
